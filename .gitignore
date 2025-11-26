@@ -1,0 +1,10 @@
+node_modules
+dashboard/node_modules
+dashboard/.next
+postgres-data
+
+# Keep environment variables out of version control
+.env
+dashboard/.env.local
+
+/generated/prisma

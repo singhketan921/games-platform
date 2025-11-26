@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id         String    @id @default(cuid())
+  name       String
+  apiKey     String    @unique
+  apiSecret  String
+  createdAt  DateTime  @default(now())
+
+  games      TenantGame[]
+  wallets    WalletBalance[]
+  walletTxs  WalletTransaction[]
+  sessions PlayerSession[]
+
+}
+
+
+model Game {
+  id        String   @id @default(cuid())
+  name      String
+  description String?
+  launchUrl String     // internal URL to launch game built by your game dev
+  type      String     // "teenpatti", "rummy", "slot", etc.
+  createdAt DateTime @default(now())
+  tenants   TenantGame[]
+  sessions PlayerSession[]
+
+}
+
+model TenantGame {
+  id        String  @id @default(cuid())
+  tenantId  String
+  gameId    String
+  isActive  Boolean @default(true)
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  game      Game    @relation(fields: [gameId], references: [id])
+}
+
+
+enum WalletTransactionType {
+  DEBIT
+  CREDIT
+}
+
+model WalletBalance {
+  id        String   @id @default(cuid())
+  tenantId  String
+  playerId  String
+  balance   Decimal  @default(0) @db.Decimal(18, 2)
+  currency  String   @default("INR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  txs       WalletTransaction[]
+}
+
+model WalletTransaction {
+  id        String                 @id @default(cuid())
+  tenantId  String
+  playerId  String
+  amount    Decimal                @db.Decimal(18, 2)
+  type      WalletTransactionType
+  reference String?
+  createdAt DateTime               @default(now())
+
+  tenant    Tenant                 @relation(fields: [tenantId], references: [id])
+  wallet    WalletBalance?         @relation(fields: [walletId], references: [id])
+  walletId  String?
+}
+
+model PlayerSession {
+  id         String   @id @default(cuid())
+  tenantId   String
+  playerId   String
+  gameId     String
+  betAmount  Decimal  @db.Decimal(18, 2)
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+  result     String?
+  isClosed   Boolean  @default(false)
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  game       Game     @relation(fields: [gameId], references: [id])
+}
+
