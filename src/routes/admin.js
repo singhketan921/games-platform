@@ -1,11 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/adminController");
-const hmacAuth = require("../middleware/hmacAuth");
+const adminHmacAuth = require("../middleware/adminHmacAuth");
 
-// Protect with HMAC because only tenant dashboards should access
-router.get("/players", hmacAuth, adminController.getPlayers);
-router.get("/wallets", hmacAuth, adminController.getWallets);
-router.get("/games", hmacAuth, adminController.getGames);
+router.get("/players", adminHmacAuth, adminController.getPlayers);
+router.get("/wallets", adminHmacAuth, adminController.getWallets);
+router.get("/games", adminHmacAuth, adminController.getGames);
+
+router.get("/tenants", adminHmacAuth, adminController.getTenants);
+router.patch("/tenants/:id", adminHmacAuth, adminController.updateTenant);
+router.patch("/tenants/:id/status", adminHmacAuth, adminController.updateTenantStatus);
+router.delete("/tenants/:id", adminHmacAuth, adminController.deleteTenant);
 
 module.exports = router;

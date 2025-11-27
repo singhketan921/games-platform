@@ -3,7 +3,7 @@ const prisma = require("../prisma/client");
 exports.getPlayers = async (req, res) => {
     try {
         const players = await prisma.playerSession.findMany({
-            distinct: ['playerId'],
+            distinct: ["playerId"],
             select: { playerId: true }
         });
 
@@ -31,5 +31,98 @@ exports.getGames = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Failed to load games" });
+    }
+};
+
+exports.getTenants = async (req, res) => {
+    try {
+        const tenants = await prisma.tenant.findMany({
+            include: {
+                games: true,
+                sessions: true,
+                walletTxs: true,
+            }
+        });
+
+        const shaped = tenants.map((tenant) => {
+            const revenue = tenant.walletTxs.reduce((sum, tx) => {
+                return sum + Number(tx.amount);
+            }, 0);
+
+            return {
+                id: tenant.id,
+                name: tenant.name,
+                status: tenant.status,
+                domain: tenant.domain,
+                contactEmail: tenant.contactEmail,
+                games: tenant.games.length,
+                sessions: tenant.sessions.length,
+                revenue,
+                createdAt: tenant.createdAt,
+            };
+        });
+
+        res.json({ success: true, tenants: shaped });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to load tenants" });
+    }
+};
+
+exports.updateTenant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, status, domain, contactEmail } = req.body;
+
+        const updated = await prisma.tenant.update({
+            where: { id },
+            data: {
+                ...(name && { name }),
+                ...(status && { status }),
+                ...(domain !== undefined && { domain }),
+                ...(contactEmail !== undefined && { contactEmail }),
+            },
+        });
+
+        res.json({ success: true, tenant: updated });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to update tenant" });
+    }
+};
+
+exports.updateTenantStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!status) {
+            return res.status(400).json({ error: "Missing status" });
+        }
+
+        const updated = await prisma.tenant.update({
+            where: { id },
+            data: { status },
+        });
+
+        res.json({ success: true, tenant: updated });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to update tenant status" });
+    }
+};
+
+exports.deleteTenant = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await prisma.tenant.delete({
+            where: { id },
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to delete tenant" });
     }
 };

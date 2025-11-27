@@ -12,6 +12,9 @@ model Tenant {
   name       String
   apiKey     String    @unique
   apiSecret  String
+  status     String    @default("active")
+  domain     String?
+  contactEmail String?
   createdAt  DateTime  @default(now())
 
   games      TenantGame[]
@@ -90,4 +93,3 @@ model PlayerSession {
   tenant     Tenant   @relation(fields: [tenantId], references: [id])
   game       Game     @relation(fields: [gameId], references: [id])
 }
-
