@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const crypto = require("crypto");
 
 exports.getPlayers = async (req, res) => {
     try {
@@ -66,6 +67,35 @@ exports.getTenants = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Failed to load tenants" });
+    }
+};
+
+exports.createTenant = async (req, res) => {
+    try {
+        const { name, domain, contactEmail, status = "active" } = req.body || {};
+
+        if (!name) {
+            return res.status(400).json({ error: "Tenant name is required" });
+        }
+
+        const apiKey = crypto.randomBytes(16).toString("hex");
+        const apiSecret = crypto.randomBytes(32).toString("hex");
+
+        const tenant = await prisma.tenant.create({
+            data: {
+                name,
+                domain,
+                contactEmail,
+                status,
+                apiKey,
+                apiSecret,
+            },
+        });
+
+        res.status(201).json({ success: true, tenant });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to create tenant" });
     }
 };
 

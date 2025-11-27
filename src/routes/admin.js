@@ -8,6 +8,7 @@ router.get("/wallets", adminHmacAuth, adminController.getWallets);
 router.get("/games", adminHmacAuth, adminController.getGames);
 
 router.get("/tenants", adminHmacAuth, adminController.getTenants);
+router.post("/tenants", adminHmacAuth, adminController.createTenant);
 router.patch("/tenants/:id", adminHmacAuth, adminController.updateTenant);
 router.patch("/tenants/:id/status", adminHmacAuth, adminController.updateTenantStatus);
 router.delete("/tenants/:id", adminHmacAuth, adminController.deleteTenant);

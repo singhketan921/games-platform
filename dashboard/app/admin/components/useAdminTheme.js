@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 const STORAGE_KEY = "admin-theme";
-const DEFAULT_THEME = "corporate";
+const DEFAULT_THEME = "light";
 
 const getInitialTheme = () => {
   if (typeof window === "undefined") {
@@ -22,7 +22,7 @@ export default function useAdminTheme() {
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
-      const next = prev === "corporate" ? "business" : "corporate";
+      const next = prev === "light" ? "dark" : "light";
       window.localStorage.setItem(STORAGE_KEY, next);
       return next;
     });

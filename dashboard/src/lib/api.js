@@ -159,3 +159,7 @@ export async function deleteAdminTenant(id) {
     // Send an explicit empty JSON body so the backend sees `{}` and hashes match
     return fetchAdminWithHmac("DELETE", `/admin/tenants/${id}`, { body: {} });
 }
+
+export async function createAdminTenant(payload) {
+    return fetchAdminWithHmac("POST", "/admin/tenants", { body: payload });
+}
