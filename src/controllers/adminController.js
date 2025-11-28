@@ -123,11 +123,22 @@ exports.updateTenant = async (req, res) => {
 
 exports.updateTenantStatus = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { status } = req.body;
+        const { id } = req.params || {};
+        const rawStatus = req.body?.status;
 
-        if (!status) {
+        if (!id) {
+            return res.status(400).json({ error: "Missing tenant id" });
+        }
+
+        if (typeof rawStatus !== "string" || !rawStatus.trim()) {
             return res.status(400).json({ error: "Missing status" });
+        }
+
+        const status = rawStatus.trim().toLowerCase();
+        const allowedStatuses = new Set(["active", "suspended"]);
+
+        if (!allowedStatuses.has(status)) {
+            return res.status(400).json({ error: "Invalid status value" });
         }
 
         const updated = await prisma.tenant.update({
@@ -137,6 +148,10 @@ exports.updateTenantStatus = async (req, res) => {
 
         res.json({ success: true, tenant: updated });
     } catch (err) {
+        if (err?.code === "P2025") {
+            return res.status(404).json({ error: "Tenant not found" });
+        }
+
         console.error(err);
         res.status(500).json({ error: "Failed to update tenant status" });
     }

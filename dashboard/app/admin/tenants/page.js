@@ -8,15 +8,29 @@ import {
 
 async function toggleStatus(formData) {
   "use server";
-  const id = formData.get("id");
-  const nextStatus = formData.get("status");
+  const id = formData.get("id")?.toString().trim();
+  const nextStatus = formData.get("status")?.toString().trim();
+
+  if (!id) {
+    throw new Error("Tenant id is required");
+  }
+
+  if (!nextStatus) {
+    throw new Error("Tenant status is required");
+  }
+
   await updateAdminTenantStatus(id, nextStatus);
   revalidatePath("/admin/tenants");
 }
 
 async function removeTenant(formData) {
   "use server";
-  const id = formData.get("id");
+  const id = formData.get("id")?.toString().trim();
+
+  if (!id) {
+    throw new Error("Tenant id is required");
+  }
+
   await deleteAdminTenant(id);
   revalidatePath("/admin/tenants");
 }

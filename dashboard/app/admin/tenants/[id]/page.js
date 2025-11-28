@@ -10,11 +10,15 @@ import {
 async function saveTenant(formData) {
   "use server";
 
-  const id = formData.get("id");
+  const id = formData.get("id")?.toString().trim();
   const name = formData.get("name")?.toString().trim() || "";
   const domain = formData.get("domain")?.toString().trim() || "";
   const contactEmail = formData.get("contactEmail")?.toString().trim() || "";
   const status = formData.get("status")?.toString().trim() || "active";
+
+  if (!id) {
+    throw new Error("Tenant id is required");
+  }
 
   await updateAdminTenant(id, {
     name,
@@ -31,8 +35,17 @@ async function saveTenant(formData) {
 async function toggleStatus(formData) {
   "use server";
 
-  const id = formData.get("id");
-  const nextStatus = formData.get("status");
+  const id = formData.get("id")?.toString().trim();
+  const nextStatus = formData.get("status")?.toString().trim();
+
+  if (!id) {
+    throw new Error("Tenant id is required");
+  }
+
+  if (!nextStatus) {
+    throw new Error("Tenant status is required");
+  }
+
   await updateAdminTenantStatus(id, nextStatus);
 
   revalidatePath("/admin/tenants");
