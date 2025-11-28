@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API_URL || "http://localhost:4000";
 const TENANT_API_KEY = process.env.NEXT_PUBLIC_TENANT_API_KEY;
 const TENANT_API_SECRET = process.env.NEXT_PUBLIC_TENANT_API_SECRET;
 
