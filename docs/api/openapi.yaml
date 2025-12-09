@@ -1,0 +1,490 @@
+openapi: 3.1.0
+info:
+  title: Games Platform API
+  version: 0.2.0
+  description: |
+    Canonical contract for the multi-tenant casino & arcade platform.
+servers:
+  - url: https://api.example.com
+  - url: https://staging.api.example.com
+security:
+  - AdminHmacAuth: []
+tags:
+  - name: admin-tenants
+  - name: admin-games
+  - name: admin-reports
+  - name: oauth
+  - name: tenant-history
+  - name: tenant-reports
+paths:
+  /oauth/token:
+    post:
+      tags: [oauth]
+      summary: Issue access token via client credentials
+      description: Basic auth header preferred; alternatively send `client_id` and `client_secret` in the JSON body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [client_credentials]
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                scope:
+                  type: string
+                  description: Space-separated scopes (currently informational)
+      responses:
+        "200":
+          description: Access token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthTokenResponse"
+        "400":
+          description: Unsupported grant type
+        "401":
+          description: Invalid client credentials
+  /admin/reports/ggr:
+    get:
+      tags: [admin-reports]
+      summary: Get gross gaming revenue stats
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: "#/components/parameters/CurrencyCode"
+        - name: platformPercent
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: GGR payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GgrReportResponse"
+  /tenant/reports/ggr:
+    get:
+      tags: [tenant-reports]
+      summary: Get tenant gross gaming revenue stats
+      description: Returns bet volume, payouts, and GGR for the authenticated tenant with optional currency filters.
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/CurrencyCode"
+        - name: platformPercent
+          in: query
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        "200":
+          description: Tenant GGR payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GgrReportResponse"
+  /admin/reconciliation/rounds:
+    get:
+      tags: [admin-reports]
+      summary: List round results for reconciliation
+      parameters:
+        - $ref: "#/components/parameters/TenantIdQuery"
+        - name: gameId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, RECONCILED, MISMATCH, ERROR]
+        - name: minDiscrepancy
+          in: query
+          schema:
+            type: number
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/CurrencyCode"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Round results response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoundResultListResponse"
+  /admin/reconciliation/rtp-summary:
+    get:
+      tags: [admin-reports]
+      summary: Summarize RTP deviation per tenant and tenant/game
+      parameters:
+        - $ref: "#/components/parameters/TenantIdQuery"
+        - name: gameId
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/CurrencyCode"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            description: Maximum number of tenant/game rows to return (default 25, max 200)
+      responses:
+        "200":
+          description: RTP deviation summary payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RtpDeviationSummaryResponse"
+  /metrics:
+    get:
+      tags: [admin-reports]
+      summary: Prometheus metrics stream
+      security: []
+      responses:
+        "200":
+          description: Plain text metrics in Prometheus exposition format
+          content:
+            text/plain:
+              schema:
+                type: string
+  /admin/tenants/{id}/ip-allowlist:
+    get:
+      tags: [admin-tenants]
+      summary: List IP allowlist entries for a tenant
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Allowlist entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantIpAllowlistListResponse"
+    post:
+      tags: [admin-tenants]
+      summary: Add an IP address to the tenant allowlist
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ipAddress]
+              properties:
+                ipAddress:
+                  type: string
+                  description: IPv4 or IPv6 address that the tenant may originate requests from
+                label:
+                  type: string
+                  description: Optional description (e.g., "OPS VPN")
+      responses:
+        "201":
+          description: Created allowlist entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantIpAllowlistEntryResponse"
+  /admin/tenants/{id}/ip-allowlist/{entryId}:
+    delete:
+      tags: [admin-tenants]
+      summary: Remove an IP address from the tenant allowlist
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/AllowlistEntryIdPath"
+      responses:
+        "200":
+          description: Entry deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericSuccess"
+components:
+  securitySchemes:
+    AdminHmacAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    TenantIdQuery:
+      name: tenantId
+      in: query
+      schema:
+        type: string
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    AllowlistEntryIdPath:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+    StartDate:
+      name: startDate
+      in: query
+      schema:
+        type: string
+        format: date-time
+    EndDate:
+      name: endDate
+      in: query
+      schema:
+        type: string
+        format: date-time
+    CurrencyCode:
+      name: currency
+      in: query
+      schema:
+        type: string
+        description: ISO 4217 currency code (e.g., INR, USD)
+      description: Filter results to a specific currency code
+  schemas:
+    GgrReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        range:
+          type: object
+          properties:
+            startDate:
+              type: string
+            endDate:
+              type: string
+        totals:
+          type: object
+          properties:
+            betVolume:
+              type: number
+            payouts:
+              type: number
+            ggr:
+              type: number
+            currency:
+              type: string
+              description: ISO currency code if totals represent a single denomination, otherwise "MIXED"
+            platformShare:
+              type: object
+              properties:
+                percentage:
+                  type: number
+                amount:
+                  type: number
+        currencyBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/CurrencyBreakdown"
+        numberSeries:
+          type: array
+          items:
+            $ref: "#/components/schemas/NumberSeriesRow"
+    NumberSeriesRow:
+      type: object
+      properties:
+        number:
+          type: integer
+        playerCount:
+          type: integer
+        betAmount:
+          type: number
+        win:
+          type: boolean
+    RoundResult:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        gameId:
+          type: string
+        playerId:
+          type: string
+        sessionId:
+          type: string
+        betAmount:
+          type: number
+        payoutAmount:
+          type: number
+        currency:
+          type: string
+        discrepancy:
+          type: number
+        status:
+          type: string
+        walletDebitTxId:
+          type: string
+        walletCreditTxId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    RoundResultListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundResult"
+        summary:
+          type: object
+          properties:
+            counts:
+              type: array
+            items:
+              type: object
+              properties:
+                status:
+                  type: string
+                count:
+                  type: integer
+            discrepancyTotal:
+              type: number
+    RtpDeviationSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        filters:
+          type: object
+          properties:
+            tenantId:
+              type: string
+            gameId:
+              type: string
+            startDate:
+              type: string
+            endDate:
+              type: string
+            currency:
+              type: string
+        tenantSummaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/RtpTenantSummary"
+        tenantGameSummaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/RtpDeviationRow"
+    RtpTenantSummary:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        currency:
+          type: string
+        rounds:
+          type: integer
+        totalBets:
+          type: number
+        totalPayouts:
+          type: number
+        targetRtp:
+          type: number
+          description: Weighted target RTP across games/profile
+        actualRtp:
+          type: number
+        deviation:
+          type: number
+          description: actualRtp minus targetRtp
+    RtpDeviationRow:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        gameId:
+          type: string
+        rtpProfile:
+          type: string
+        currency:
+          type: string
+        rounds:
+          type: integer
+        totalBets:
+          type: number
+        totalPayouts:
+          type: number
+        targetRtp:
+          type: number
+        actualRtp:
+          type: number
+        deviation:
+          type: number
+    CurrencyBreakdown:
+      type: object
+      properties:
+        currency:
+          type: string
+        betVolume:
+          type: number
+        payouts:
+          type: number
+        ggr:
+          type: number
+    TenantIpAllowlistEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        ipAddress:
+          type: string
+        label:
+          type: string
+          description: Optional operator-provided note
+        createdAt:
+          type: string
+          format: date-time
+    TenantIpAllowlistListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantIpAllowlistEntry"
+    TenantIpAllowlistEntryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        entry:
+          $ref: "#/components/schemas/TenantIpAllowlistEntry"
+    GenericSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+    OAuthTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+        scope:
+          type: string

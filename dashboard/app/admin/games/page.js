@@ -1,18 +1,13 @@
-"use client";
-
 import Link from "next/link";
-
-const games = [
-  { id: "g1", name: "Teen Patti", status: "active", sessions: 120, callbacks: 50 },
-  { id: "g2", name: "Lucky Ball", status: "active", sessions: 95, callbacks: 30 },
-  { id: "g3", name: "Rocket Reels", status: "inactive", sessions: 0, callbacks: 0 },
-  { id: "g4", name: "Crystal Cavern", status: "active", sessions: 82, callbacks: 18 },
-];
+import { getAdminGames } from "../../../src/lib/api";
 
 const badgeClass = (status) =>
   status === "active" ? "badge badge-success" : "badge badge-error";
 
-export default function GamesListPage() {
+export default async function GamesListPage() {
+  const data = await getAdminGames();
+  const games = data?.games || [];
+
   return (
     <div className="p-6 space-y-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -49,13 +44,20 @@ export default function GamesListPage() {
                   <Link href={`/admin/games/${game.id}`} className="btn btn-xs btn-ghost">
                     View
                   </Link>
-                  <Link href={`/admin/games/${game.id}`} className="btn btn-xs btn-outline">
+                  <Link href={`/admin/games/${game.id}/edit`} className="btn btn-xs btn-outline">
                     Edit
                   </Link>
                   <button className="btn btn-xs btn-warning">Toggle</button>
                 </td>
               </tr>
             ))}
+            {!games.length && (
+              <tr>
+                <td colSpan={5} className="text-center text-slate-500 py-8">
+                  No games found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

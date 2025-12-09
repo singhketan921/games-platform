@@ -1,0 +1,14 @@
+api:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/acme/games-platform
+    tag: staging
+  env:
+    - name: NODE_ENV
+      value: production
+    - name: LOG_LEVEL
+      value: info
+    - name: PREFERRED_CURRENCY
+      value: USD
++  - name: FEATURE_TOGGLE_RTP_CONTROLS
++      value: "true"

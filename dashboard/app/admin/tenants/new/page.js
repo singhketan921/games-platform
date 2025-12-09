@@ -15,7 +15,7 @@ async function createTenantAction(formData) {
     throw new Error("Tenant name is required");
   }
 
-  await createAdminTenant({
+  const result = await createAdminTenant({
     name,
     domain: domain || null,
     contactEmail: contactEmail || null,
@@ -23,6 +23,12 @@ async function createTenantAction(formData) {
   });
 
   revalidatePath("/admin/tenants");
+  const tenantId = result?.tenant?.id;
+  const secret = result?.credentials?.clientSecret;
+  if (tenantId) {
+    const query = secret ? `?rotatedSecret=${encodeURIComponent(secret)}` : "";
+    redirect(`/admin/tenants/${tenantId}${query}`);
+  }
   redirect("/admin/tenants");
 }
 

@@ -1,16 +1,18 @@
-const hmacAuth = require("../middleware/hmacAuth");
+const express = require("express");
 
 module.exports = (app) => {
-    app.use("/tenant", require("./tenant")); // for creating tenants
-    
-    // Game routes
-    app.use("/games", require("./games"));
-    app.use("/wallet", require("./wallet"));
-    app.use("/game-callback", require("./callback"));
-    app.use("/history", require("./history"));
-    app.use("/admin", require("./admin"));
+    const gateway = express.Router();
 
+    gateway.use("/tenant", require("./tenant"));
+    gateway.use("/games", require("./games"));
+    gateway.use("/wallet", require("./wallet"));
+    gateway.use("/game-callback", require("./callback"));
+    gateway.use("/history", require("./history"));
+    gateway.use("/sessions", require("./session"));
+    gateway.use("/game-engine", require("./gameEngine"));
+    gateway.use("/admin/users", require("./adminUsers"));
+    gateway.use("/admin", require("./admin"));
+    gateway.use("/oauth", require("./oauth"));
 
-
-
+    app.use("/", gateway);
 };

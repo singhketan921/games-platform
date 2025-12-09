@@ -80,6 +80,7 @@ export default async function TenantsPage({ searchParams }) {
               <th>Games</th>
               <th>Sessions</th>
               <th>Revenue</th>
+              <th>OAuth Client</th>
               <th>Status</th>
               <th className="text-center">Actions</th>
             </tr>
@@ -91,6 +92,11 @@ export default async function TenantsPage({ searchParams }) {
                 <td>{tenant.games}</td>
                 <td>{tenant.sessions}</td>
                 <td>${Number(tenant.revenue).toLocaleString()}</td>
+                <td>
+                  <code className="text-xs">
+                    {tenant.oauthClientId || "-"}
+                  </code>
+                </td>
                 <td>
                   <span className={badgeClass(tenant.status)}>{tenant.status}</span>
                 </td>

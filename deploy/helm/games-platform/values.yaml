@@ -1,0 +1,57 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/example/games-platform
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 4000
+
+env:
+  - name: NODE_ENV
+    value: production
+  - name: PORT
+    value: "4000"
+
+secretEnv: []
+  # - name: DATABASE_URL
+  #   secretName: games-platform-api
+  #   secretKey: database-url
+
+affinity: {}
+nodeSelector: {}
+tolerations: []
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: games-platform.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+monitoring:
+  enabled: true
+  scrapeInterval: 30s
+  namespace: ""

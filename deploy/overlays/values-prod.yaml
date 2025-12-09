@@ -1,0 +1,37 @@
+api:
+  replicaCount: 4
+  image:
+    repository: ghcr.io/acme/games-platform
+    tag: v1.0.0
+  env:
+    - name: NODE_ENV
+      value: production
+    - name: LOG_LEVEL
+      value: warn
+  secretEnv:
+    - name: DATABASE_URL
+      secretName: games-platform-prod
+      secretKey: database-url
+    - name: ADMIN_API_KEY
+      secretName: games-platform-prod
+      secretKey: admin-api-key
+    - name: ADMIN_API_SECRET
+      secretName: games-platform-prod
+      secretKey: admin-api-secret
+    - name: TENANT_JWT_SECRET
+      secretName: games-platform-prod
+      secretKey: tenant-jwt-secret
+  ingress:
+    enabled: true
+    host: api.example.com
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+postgres:
+  enabled: false
+redis:
+  enabled: false

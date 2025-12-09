@@ -1,0 +1,30 @@
+name: Helm CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.2
+
+      - name: Lint chart
+        run: helm lint deploy/helm/games-platform
+
+      - name: Render manifests
+        run: |
+          helm template test-release deploy/helm/games-platform \
+            --set image.repository=example.com/dummy \
+            --set image.tag=test \
+            --set secretEnv[0].name=DUMMY --set secretEnv[0].secretName=foo --set secretEnv[0].secretKey=bar > /tmp/rendered.yaml
+          cat /tmp/rendered.yaml

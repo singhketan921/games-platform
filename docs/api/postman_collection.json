@@ -1,0 +1,392 @@
+{
+  "info": {
+    "name": "Games Platform API",
+    "description": "Starter collection for admin + tenant flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "OAuth > Client Credentials Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Basic {{BASIC_AUTH}}",
+            "description": "Optional if you want to inline client_id/client_secret in body"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"{{CLIENT_ID}}\",\n  \"client_secret\": \"{{CLIENT_SECRET}}\",\n  \"scope\": \"wallet:read session:write\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/oauth/token",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "oauth",
+            "token"
+          ]
+        },
+        "description": "Request a bearer token for service-to-service calls. If Authorization header is present, client_id/client_secret in the body are optional."
+      }
+    },
+    {
+      "name": "Admin \u00ef\u00bf\u00bd List Tenants",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-KEY",
+            "value": "{{ADMIN_API_KEY}}"
+          },
+          {
+            "key": "X-TIMESTAMP",
+            "value": "{{TIMESTAMP}}"
+          },
+          {
+            "key": "X-NONCE",
+            "value": "{{NONCE}}"
+          },
+          {
+            "key": "X-SIGNATURE",
+            "value": "{{SIGNATURE}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/admin/tenants",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "admin",
+            "tenants"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Admin \u00ef\u00bf\u00bd GGR Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-KEY",
+            "value": "{{ADMIN_API_KEY}}"
+          },
+          {
+            "key": "X-TIMESTAMP",
+            "value": "{{TIMESTAMP}}"
+          },
+          {
+            "key": "X-NONCE",
+            "value": "{{NONCE}}"
+          },
+          {
+            "key": "X-SIGNATURE",
+            "value": "{{SIGNATURE}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/admin/reports/ggr?startDate={{START}}&endDate={{END}}",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "admin",
+            "reports",
+            "ggr"
+          ],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "{{START}}"
+            },
+            {
+              "key": "endDate",
+              "value": "{{END}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Admin > Reconciliation Rounds",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-KEY",
+            "value": "{{ADMIN_API_KEY}}"
+          },
+          {
+            "key": "X-TIMESTAMP",
+            "value": "{{TIMESTAMP}}"
+          },
+          {
+            "key": "X-NONCE",
+            "value": "{{NONCE}}"
+          },
+          {
+            "key": "X-SIGNATURE",
+            "value": "{{SIGNATURE}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/admin/reconciliation/rounds?tenantId={{TENANT_ID}}",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "admin",
+            "reconciliation",
+            "rounds"
+          ],
+          "query": [
+            {
+              "key": "tenantId",
+              "value": "{{TENANT_ID}}"
+            },
+            {
+              "key": "status",
+              "value": "MISMATCH"
+            },
+            {
+              "key": "limit",
+              "value": "50"
+            },
+            {
+              "key": "currency",
+              "value": "INR"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Admin > RTP Deviation Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-KEY",
+            "value": "{{ADMIN_API_KEY}}"
+          },
+          {
+            "key": "X-TIMESTAMP",
+            "value": "{{TIMESTAMP}}"
+          },
+          {
+            "key": "X-NONCE",
+            "value": "{{NONCE}}"
+          },
+          {
+            "key": "X-SIGNATURE",
+            "value": "{{SIGNATURE}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/admin/reconciliation/rtp-summary?tenantId={{TENANT_ID}}&limit=25",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "admin",
+            "reconciliation",
+            "rtp-summary"
+          ],
+          "query": [
+            {
+              "key": "tenantId",
+              "value": "{{TENANT_ID}}"
+            },
+            {
+              "key": "gameId",
+              "value": ""
+            },
+            {
+              "key": "limit",
+              "value": "25"
+            },
+            {
+              "key": "currency",
+              "value": "INR"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Admin > Metrics (Prometheus)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "text/plain"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/metrics",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "metrics"
+          ]
+        },
+        "description": "Prometheus exposition format. No HMAC headers required."
+      }
+    },
+    {
+      "name": "Tenant \u00ef\u00bf\u00bd Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": \"tenant_123\",\n  \"email\": \"ops@tenant.com\",\n  \"password\": \"example\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/tenant/auth/login",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "tenant",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tenant \u00ef\u00bf\u00bd Sessions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-KEY",
+            "value": "{{TENANT_API_KEY}}"
+          },
+          {
+            "key": "X-TIMESTAMP",
+            "value": "{{TIMESTAMP}}"
+          },
+          {
+            "key": "X-NONCE",
+            "value": "{{NONCE}}"
+          },
+          {
+            "key": "X-SIGNATURE",
+            "value": "{{SIGNATURE}}"
+          },
+          {
+            "key": "X-TENANT-USER-ID",
+            "value": "{{TENANT_USER_ID}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/history/sessions",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "history",
+            "sessions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tenant > GGR Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-KEY",
+            "value": "{{TENANT_API_KEY}}"
+          },
+          {
+            "key": "X-TIMESTAMP",
+            "value": "{{TIMESTAMP}}"
+          },
+          {
+            "key": "X-NONCE",
+            "value": "{{NONCE}}"
+          },
+          {
+            "key": "X-SIGNATURE",
+            "value": "{{SIGNATURE}}"
+          },
+          {
+            "key": "X-TENANT-USER-ID",
+            "value": "{{TENANT_USER_ID}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/tenant/reports/ggr?currency={{CURRENCY}}",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "tenant",
+            "reports",
+            "ggr"
+          ],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "{{START}}"
+            },
+            {
+              "key": "endDate",
+              "value": "{{END}}"
+            },
+            {
+              "key": "currency",
+              "value": "{{CURRENCY}}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "https://staging.api.example.com"
+    },
+    {
+      "key": "ADMIN_API_KEY",
+      "value": ""
+    },
+    {
+      "key": "TENANT_API_KEY",
+      "value": ""
+    },
+    {
+      "key": "CLIENT_ID",
+      "value": ""
+    },
+    {
+      "key": "CLIENT_SECRET",
+      "value": ""
+    },
+    {
+      "key": "BASIC_AUTH",
+      "value": ""
+    }
+  ]
+}

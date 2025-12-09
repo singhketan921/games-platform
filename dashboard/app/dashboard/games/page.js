@@ -1,8 +1,11 @@
 import Link from "next/link";
 import ErrorBox from "../../components/ErrorBox";
-import { launchGame } from "../../../src/lib/api";
+import { getTenantProfile, launchTenantGame } from "../../../src/lib/tenantApi";
 
 export default async function GamesPage({ searchParams = {} }) {
+    const profile = await getTenantProfile().catch(() => null);
+    const userRole = profile?.user?.role || "UNKNOWN";
+    const canLaunch = userRole === "OPERATOR";
     const playerId = (searchParams.playerId || "").trim();
     const gameId = (searchParams.gameId || "").trim();
     const betAmount = (searchParams.betAmount || "").trim();
@@ -11,12 +14,14 @@ export default async function GamesPage({ searchParams = {} }) {
     let launchResult = null;
     let error = "";
 
-    if (shouldLaunch) {
+    if (shouldLaunch && !canLaunch) {
+        error = "Only operator accounts can launch games.";
+    } else if (shouldLaunch && canLaunch) {
         try {
-            launchResult = await launchGame({
+            launchResult = await launchTenantGame({
                 playerId,
                 gameId,
-                betAmount: Number(betAmount),
+                amount: Number(betAmount),
             });
         } catch (err) {
             error = err.message;
@@ -63,12 +68,20 @@ export default async function GamesPage({ searchParams = {} }) {
                     <div className="md:col-span-3">
                         <button
                             type="submit"
-                            className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                            disabled={!canLaunch}
+                            className={`w-full rounded px-3 py-2 text-sm font-semibold text-white ${
+                                canLaunch ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-400 cursor-not-allowed"
+                            }`}
                         >
                             Launch Game
                         </button>
                     </div>
                 </form>
+                {!canLaunch && (
+                    <p className="mt-2 text-xs text-amber-600">
+                        Your current role ({userRole}) has read-only access. Upgrade to an operator account to launch games.
+                    </p>
+                )}
                 <p className="mt-3 text-xs text-gray-500">
                     Sending this form submits the parameters through the secure action and shows the launch URL below.
                 </p>

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: games-platform
+description: Helm chart for deploying the Node.js admin/tenant API
+version: 0.1.0
+appVersion: "1.0.0"
+type: application

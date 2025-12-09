@@ -1,11 +1,21 @@
 const prisma = require("../prisma/client");
+const rtpService = require("../services/rtpService");
+const { requireTenantRole } = require("../utils/tenantRoles");
 
 exports.createGame = async (req, res) => {
     try {
-        const { name, description, launchUrl, type } = req.body;
+        const { name, description, launchUrl, type, status, volatility, rtp } = req.body;
 
         const game = await prisma.game.create({
-            data: { name, description, launchUrl, type }
+            data: {
+                name,
+                description,
+                launchUrl,
+                type,
+                status: status || "active",
+                volatility: volatility || "Medium",
+                rtp: rtp !== undefined ? Number(rtp) : undefined,
+            }
         });
 
         res.json({ success: true, game });
@@ -29,8 +39,10 @@ exports.assignGameToTenant = async (req, res) => {
         const { gameId } = req.body;
         const tenantId = req.tenant.id;
 
+        const globalConfig = await rtpService.getGlobalConfig();
+
         const assigned = await prisma.tenantGame.create({
-            data: { tenantId, gameId }
+            data: { tenantId, gameId, rtpProfile: globalConfig.profile }
         });
 
         res.json({ success: true, assigned });
@@ -60,6 +72,9 @@ const { Decimal } = require("@prisma/client/runtime/library");
 
 exports.launchGame = async (req, res) => {
     try {
+        if (!requireTenantRole(req, res, ["OPERATOR"])) {
+            return;
+        }
         const tenantId = req.tenant.id;
         const { gameId, playerId, amount } = req.body;
 

@@ -92,7 +92,8 @@ async function fetchWithHmac(method, path, { body } = {}) {
 
 async function fetchAdminWithHmac(method, path, { body } = {}) {
     const payload = body && typeof body !== "string" ? JSON.stringify(body) : body || "";
-    const headers = generateAdminHeaders(method, path, payload);
+    const canonicalPath = path.split("?")[0];
+    const headers = generateAdminHeaders(method, canonicalPath, payload);
 
     const fetchOptions = {
         method,
@@ -131,16 +132,6 @@ export async function getWalletBalance(playerId) {
     return fetchWithHmac("GET", `/wallet/balance/${playerId}`);
 }
 
-export async function launchGame({ playerId, gameId, betAmount }) {
-    return fetchWithHmac("POST", "/games/launch", {
-        body: {
-            playerId,
-            gameId,
-            betAmount,
-        },
-    });
-}
-
 export async function getAdminTenants() {
     return fetchAdminWithHmac("GET", "/admin/tenants");
 }
@@ -162,4 +153,166 @@ export async function deleteAdminTenant(id) {
 
 export async function createAdminTenant(payload) {
     return fetchAdminWithHmac("POST", "/admin/tenants", { body: payload });
+}
+
+export async function rotateAdminTenantCredential(id) {
+    return fetchAdminWithHmac("POST", `/admin/tenants/${id}/credentials/rotate`, {
+        body: {},
+    });
+}
+
+export async function getAdminUsers() {
+    return fetchAdminWithHmac("GET", "/admin/users");
+}
+
+export async function createAdminUser(payload) {
+    return fetchAdminWithHmac("POST", "/admin/users", { body: payload });
+}
+
+export async function updateAdminUser(id, payload) {
+    return fetchAdminWithHmac("PATCH", `/admin/users/${id}`, { body: payload });
+}
+
+export async function getAdminTenantWalletConfig(id) {
+    return fetchAdminWithHmac("GET", `/admin/tenants/${id}/wallet-config`);
+}
+
+export async function updateAdminTenantWalletConfig(id, payload) {
+    return fetchAdminWithHmac("POST", `/admin/tenants/${id}/wallet-config`, { body: payload });
+}
+
+export async function getAdminTenantIpAllowlist(id) {
+    return fetchAdminWithHmac("GET", `/admin/tenants/${id}/ip-allowlist`);
+}
+
+export async function addAdminTenantIpAllowlistEntry(id, payload) {
+    return fetchAdminWithHmac("POST", `/admin/tenants/${id}/ip-allowlist`, { body: payload });
+}
+
+export async function deleteAdminTenantIpAllowlistEntry(tenantId, entryId) {
+    return fetchAdminWithHmac("DELETE", `/admin/tenants/${tenantId}/ip-allowlist/${entryId}`, { body: {} });
+}
+
+export async function updateAdminTenantGame(tenantId, gameId, payload) {
+    return fetchAdminWithHmac("PATCH", `/admin/tenants/${tenantId}/games/${gameId}`, { body: payload });
+}
+
+export async function getAdminTenantUsers(id) {
+    return fetchAdminWithHmac("GET", `/admin/tenants/${id}/users`);
+}
+
+export async function createAdminTenantUser(id, payload) {
+    return fetchAdminWithHmac("POST", `/admin/tenants/${id}/users`, { body: payload });
+}
+
+export async function updateAdminTenantUserStatus(tenantId, userId, status) {
+    return fetchAdminWithHmac("PATCH", `/admin/tenants/${tenantId}/users/${userId}/status`, {
+        body: { status },
+    });
+}
+
+export async function resetAdminTenantUserPassword(tenantId, userId, password) {
+    return fetchAdminWithHmac("POST", `/admin/tenants/${tenantId}/users/${userId}/password`, {
+        body: { password },
+    });
+}
+
+export async function getAdminMetrics() {
+    return fetchAdminWithHmac("GET", "/admin/metrics/summary");
+}
+
+export async function getAdminGgrReport({ startDate, endDate, tenantId, platformPercent } = {}) {
+    const params = new URLSearchParams();
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
+    if (tenantId) params.set("tenantId", tenantId);
+    if (platformPercent) params.set("platformPercent", platformPercent);
+    const qs = params.toString();
+    const path = qs ? `/admin/reports/ggr?${qs}` : "/admin/reports/ggr";
+    return fetchAdminWithHmac("GET", path);
+}
+
+export async function getGlobalRtpConfig() {
+    return fetchAdminWithHmac("GET", "/admin/rtp/global");
+}
+
+export async function updateGlobalRtpConfig(profile) {
+    return fetchAdminWithHmac("POST", "/admin/rtp/global", {
+        body: { profile },
+    });
+}
+
+export async function getRtpChangeLogs(limit = 50) {
+    return fetchAdminWithHmac("GET", `/admin/rtp/logs?limit=${limit}`);
+}
+
+export async function getAdminGames() {
+    return fetchAdminWithHmac("GET", "/admin/games");
+}
+
+export async function getAdminGame(id) {
+    return fetchAdminWithHmac("GET", `/admin/games/${id}`);
+}
+
+export async function updateAdminGame(id, payload) {
+    return fetchAdminWithHmac("PATCH", `/admin/games/${id}`, { body: payload });
+}
+
+export async function createAdminGame(payload) {
+    return fetchAdminWithHmac("POST", "/admin/games", { body: payload });
+}
+
+export async function getAdminReconciliationRounds(params = {}) {
+    const search = new URLSearchParams();
+    if (params.tenantId) search.set("tenantId", params.tenantId);
+    if (params.gameId) search.set("gameId", params.gameId);
+    if (params.status) search.set("status", params.status);
+    if (params.minDiscrepancy) search.set("minDiscrepancy", params.minDiscrepancy);
+    if (params.startDate) search.set("startDate", params.startDate);
+    if (params.endDate) search.set("endDate", params.endDate);
+    if (params.currency) search.set("currency", params.currency);
+    if (params.limit) search.set("limit", params.limit);
+    const qs = search.toString();
+    const path = qs ? `/admin/reconciliation/rounds?${qs}` : `/admin/reconciliation/rounds`;
+    return fetchAdminWithHmac("GET", path);
+}
+
+export async function getAdminReconciliationDiscrepancies(params = {}) {
+    const search = new URLSearchParams();
+    if (params.tenantId) search.set("tenantId", params.tenantId);
+    if (params.minAmount) search.set("minAmount", params.minAmount);
+    if (params.currency) search.set("currency", params.currency);
+    const qs = search.toString();
+    const path = qs ? `/admin/reconciliation/discrepancies?${qs}` : `/admin/reconciliation/discrepancies`;
+    return fetchAdminWithHmac("GET", path);
+}
+
+export async function getAdminRtpDeviationSummary(params = {}) {
+    const search = new URLSearchParams();
+    if (params.tenantId) search.set("tenantId", params.tenantId);
+    if (params.gameId) search.set("gameId", params.gameId);
+    if (params.startDate) search.set("startDate", params.startDate);
+    if (params.endDate) search.set("endDate", params.endDate);
+    if (params.currency) search.set("currency", params.currency);
+    if (params.limit) search.set("limit", params.limit);
+    const qs = search.toString();
+    const path = qs ? `/admin/reconciliation/rtp-summary?${qs}` : `/admin/reconciliation/rtp-summary`;
+    return fetchAdminWithHmac("GET", path);
+}
+
+export async function getAdminWalletLogs(params = {}) {
+    const search = new URLSearchParams();
+    if (params.tenantId) search.set("tenantId", params.tenantId);
+    if (params.status) search.set("status", params.status);
+    if (params.type) search.set("type", params.type);
+    if (params.hours) search.set("hours", params.hours);
+    if (params.limit) search.set("limit", params.limit);
+    const qs = search.toString();
+    const path = qs ? `/admin/wallet/logs?${qs}` : `/admin/wallet/logs`;
+    return fetchAdminWithHmac("GET", path);
+}
+
+export async function getAdminWalletLogMetrics(hours) {
+    const qs = hours ? `?hours=${hours}` : "";
+    return fetchAdminWithHmac("GET", `/admin/wallet/logs/metrics${qs}`);
 }

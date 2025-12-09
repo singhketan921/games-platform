@@ -96,13 +96,21 @@ exports.getWalletHistory = async (req, res) => {
         tenantId,
         playerId,
       },
+      include: {
+        wallet: {
+          select: { currency: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
     res.json({
       success: true,
       count: transactions.length,
-      transactions,
+      transactions: transactions.map((tx) => ({
+        ...tx,
+        currency: tx.wallet?.currency || "INR",
+      })),
     });
   } catch (err) {
     console.error("History getWalletHistory error:", err);

@@ -1,13 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { createAdminGame } from "../../../../src/lib/api";
 
 export default function CreateGamePage() {
-  const [showSuccess, setShowSuccess] = useState(false);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setShowSuccess(true);
+    setError("");
+    const formData = new FormData(event.currentTarget);
+
+    const payload = {
+      name: formData.get("name")?.toString().trim(),
+      description: formData.get("description")?.toString().trim(),
+      rtp: formData.get("rtp")?.toString().trim(),
+      volatility: formData.get("volatility")?.toString(),
+      status: formData.get("status")?.toString(),
+      type: formData.get("type")?.toString() || "custom",
+      launchUrl: formData.get("launchUrl")?.toString() || "",
+    };
+
+    try {
+      startTransition(async () => {
+        await createAdminGame(payload);
+        router.push("/admin/games");
+        router.refresh();
+      });
+    } catch (err) {
+      setError(err.message || "Failed to create game");
+    }
   };
 
   return (
@@ -24,12 +49,18 @@ export default function CreateGamePage() {
           </a>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label className="label">
               <span className="label-text">Game Name</span>
             </label>
             <input type="text" className="input input-bordered w-full" placeholder="Teen Patti" required />
+          </div>
+          <div>
+            <label className="label">
+              <span className="label-text">Type</span>
+            </label>
+            <input type="text" name="type" className="input input-bordered w-full" placeholder="teenpatti" />
           </div>
           <div>
             <label className="label">
@@ -41,6 +72,12 @@ export default function CreateGamePage() {
               placeholder="Describe the game"
               required
             ></textarea>
+          </div>
+          <div>
+            <label className="label">
+              <span className="label-text">Launch URL</span>
+            </label>
+            <input type="text" name="launchUrl" className="input input-bordered w-full" placeholder="https://..." />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -69,14 +106,14 @@ export default function CreateGamePage() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary w-full">
-            Create Game
+          <button type="submit" className="btn btn-primary w-full" disabled={pending}>
+            {pending ? "Saving..." : "Create Game"}
           </button>
         </form>
 
-        {showSuccess && (
-          <div role="alert" className="alert alert-success">
-            Game created (demo only)
+        {error && (
+          <div role="alert" className="alert alert-error">
+            {error}
           </div>
         )}
       </div>

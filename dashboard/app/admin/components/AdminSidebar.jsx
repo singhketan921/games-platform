@@ -11,6 +11,8 @@ import {
   QueueListIcon,
   CurrencyDollarIcon,
   ArrowRightOnRectangleIcon,
+  ChartBarIcon,
+  ScaleIcon,
 } from "@heroicons/react/24/outline";
 
 const navItems = [
@@ -22,6 +24,9 @@ const navItems = [
   { href: "/admin/sessions", label: "Sessions", icon: QueueListIcon },
   { href: "/admin/callbacks", label: "Callbacks", icon: ListBulletIcon },
   { href: "/admin/transactions", label: "Transactions", icon: CurrencyDollarIcon },
+  { href: "/admin/reports/ggr", label: "GGR Dashboard", icon: ChartBarIcon },
+  { href: "/admin/reports/reconciliation", label: "Reconciliation", icon: ScaleIcon },
+  { href: "/admin/reports/wallet", label: "Wallet Logs", icon: CurrencyDollarIcon },
   { href: "/admin/login", label: "Login", icon: ArrowRightOnRectangleIcon },
 ];
 

@@ -1,113 +1,217 @@
-"use client";
+import { revalidatePath } from "next/cache";
+import {
+  getAdminUsers,
+  createAdminUser,
+  updateAdminUser,
+} from "../../../src/lib/api";
 
-import { useState } from "react";
+const ROLE_OPTIONS = [
+  { value: "SUPER_ADMIN", label: "Super Admin" },
+  { value: "ADMIN", label: "Admin" },
+  { value: "ANALYST", label: "Analyst" },
+  { value: "READ_ONLY", label: "Read Only" },
+];
 
-export default function AdminSettingsPage() {
-  const [showReveal, setShowReveal] = useState(false);
-  const [theme, setTheme] = useState("light");
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "suspended", label: "Suspended" },
+];
+
+const getFormString = (formData, key) => {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
+};
+
+async function createAdminAction(formData) {
+  "use server";
+
+  const email = getFormString(formData, "email").toLowerCase();
+  const password = getFormString(formData, "password");
+  const role = getFormString(formData, "role") || "ADMIN";
+
+  if (!email || !password) {
+    throw new Error("Email and password are required");
+  }
+
+  await createAdminUser({ email, password, role });
+  revalidatePath("/admin/settings");
+}
+
+async function updateAdminAction(formData) {
+  "use server";
+
+  const id = getFormString(formData, "id");
+  const role = getFormString(formData, "role");
+  const status = getFormString(formData, "status");
+  const password = getFormString(formData, "password");
+
+  if (!id) {
+    throw new Error("Admin user id is required");
+  }
+
+  const payload = {};
+  if (role) payload.role = role;
+  if (status) payload.status = status;
+  if (password) payload.password = password;
+
+  if (Object.keys(payload).length === 0) {
+    throw new Error("No updates provided");
+  }
+
+  await updateAdminUser(id, payload);
+  revalidatePath("/admin/settings");
+}
+
+function roleLabel(value) {
+  return ROLE_OPTIONS.find((role) => role.value === value)?.label || value;
+}
+
+export default async function AdminSettingsPage() {
+  const response = await getAdminUsers();
+  const users = response?.users || [];
 
   return (
     <div className="p-6 space-y-10">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Admin Settings</h1>
         <p className="text-base text-slate-600">
-          Manage your admin account &amp; security settings
+          Manage platform administrators, credentials, and security posture.
         </p>
       </div>
 
-      <section className="card bg-base-100 shadow rounded-xl p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Profile</p>
-            <h2 className="text-xl font-bold text-slate-900">System Administrator</h2>
-            <p className="text-sm text-slate-500">admin@example.com</p>
-            <div className="mt-2">
-              <span className="badge badge-info mr-2">Super Admin</span>
-              <span className="text-xs text-slate-500">Joined Jan 2024</span>
-            </div>
-          </div>
-          <button className="btn btn-primary">Edit Profile</button>
-        </div>
-      </section>
-
       <section className="card bg-base-100 shadow rounded-xl p-6 space-y-6">
-        <h2 className="text-xl font-bold text-slate-900">API Keys &amp; Security</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-slate-700">API Key</p>
-            <p className="text-base font-mono text-slate-500">
-              ab12cd{showReveal ? "efghijklmnop" : "************"}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button className="btn btn-sm btn-outline" onClick={() => setShowReveal((prev) => !prev)}>
-                {showReveal ? "Hide" : "Reveal"}
-              </button>
-              <button className="btn btn-sm">Copy</button>
-              <button className="btn btn-sm btn-outline" onClick={() => alert("Demo only: key regenerated")}>
-                Regenerate Key
-              </button>
-            </div>
+        <h2 className="text-xl font-bold text-slate-900">Invite Admin User</h2>
+        <form action={createAdminAction} className="grid gap-4 md:grid-cols-3">
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Email</span>
+            </label>
+            <input name="email" type="email" className="input input-bordered" required />
           </div>
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-slate-700">API Secret</p>
-            <p className="text-base font-mono text-slate-500">
-              dk92jf{showReveal ? "mnopqrstu" : "************"}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button className="btn btn-sm btn-outline" onClick={() => setShowReveal((prev) => !prev)}>
-                {showReveal ? "Hide" : "Reveal"}
-              </button>
-              <button className="btn btn-sm">Copy</button>
-              <button className="btn btn-sm btn-outline" onClick={() => alert("Demo only: secret regenerated")}>
-                Regenerate Secret
-              </button>
-            </div>
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Role</span>
+            </label>
+            <select name="role" className="select select-bordered">
+              {ROLE_OPTIONS.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Temporary Password</span>
+            </label>
+            <input name="password" type="text" className="input input-bordered" required />
+          </div>
+          <div className="md:col-span-3">
+            <button type="submit" className="btn btn-primary">
+              Create Admin
+            </button>
+          </div>
+        </form>
       </section>
 
-      <section className="card bg-base-100 shadow rounded-xl p-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Appearance</h2>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-slate-600">Theme:</span>
-          <div className="swap swap-rotate">
-            <input
-              type="checkbox"
-              checked={theme === "dark"}
-              onChange={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
-            />
-            <button className="swap-on btn btn-sm btn-outline">Dark</button>
-            <button className="swap-off btn btn-sm btn-primary">Light</button>
+      <section className="card bg-base-100 shadow rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+              Access Control
+            </p>
+            <h2 className="text-xl font-bold text-slate-900">Admin Directory</h2>
           </div>
-          <p className="text-sm text-slate-500">Current: {theme.charAt(0).toUpperCase() + theme.slice(1)}</p>
         </div>
-      </section>
-
-      <section className="card bg-base-100 shadow rounded-xl p-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">System Info</h2>
         <div className="overflow-x-auto">
-          <table className="table w-full text-sm">
+          <table className="table text-sm">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr>
-                <td className="font-semibold">Version</td>
-                <td>v1.0.0</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Environment</td>
-                <td>Development</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Uptime</td>
-                <td>5 days 3 hours</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Server Region</td>
-                <td>EU-West</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">API Latency</td>
-                <td>120 ms</td>
-              </tr>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td className="font-semibold">{user.email}</td>
+                  <td>{roleLabel(user.role)}</td>
+                  <td>
+                    <span
+                      className={`badge ${
+                        user.status === "active" ? "badge-success" : "badge-error"
+                      }`}
+                    >
+                      {user.status}
+                    </span>
+                  </td>
+                  <td>{new Date(user.createdAt).toLocaleString()}</td>
+                  <td>
+                    <details className="dropdown dropdown-end">
+                      <summary className="btn btn-xs btn-outline">Manage</summary>
+                      <div className="dropdown-content z-[1] bg-base-100 rounded-box p-4 w-72 space-y-3 shadow">
+                        <form action={updateAdminAction} className="space-y-2">
+                          <input type="hidden" name="id" value={user.id} />
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">
+                                Role (current: {roleLabel(user.role)})
+                              </span>
+                            </label>
+                            <select name="role" defaultValue="" className="select select-bordered select-sm">
+                              <option value="">Keep current</option>
+                              {ROLE_OPTIONS.map((role) => (
+                                <option key={role.value} value={role.value}>
+                                  {role.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">
+                                Status (current: {user.status})
+                              </span>
+                            </label>
+                            <select name="status" defaultValue="" className="select select-bordered select-sm">
+                              <option value="">Keep current</option>
+                              {STATUS_OPTIONS.map((status) => (
+                                <option key={status.value} value={status.value}>
+                                  {status.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">Set New Password</span>
+                            </label>
+                            <input
+                              name="password"
+                              type="text"
+                              className="input input-bordered input-sm"
+                              placeholder="Optional"
+                            />
+                          </div>
+                          <button type="submit" className="btn btn-sm btn-primary w-full">
+                            Update
+                          </button>
+                        </form>
+                      </div>
+                    </details>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center text-slate-500 py-8">
+                    No admin users found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

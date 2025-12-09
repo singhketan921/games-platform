@@ -1,104 +1,130 @@
-"use client";
+import AssignmentRow from "./AssignmentRow";
+import { getAdminGames, getAdminTenants } from "../../../src/lib/api";
 
-import { useState } from "react";
-import { tenants, games, assignments } from "../mockData";
+export const dynamic = "force-dynamic";
 
-const statusBadge = (isActive) =>
-  isActive ? "badge badge-success" : "badge badge-error";
+function buildAssignments(tenants) {
+  return tenants.flatMap((tenant) =>
+    (tenant.gameAssignments || []).map((assignment) => ({
+      id: `${tenant.id}-${assignment.gameId}`,
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      gameId: assignment.gameId,
+      gameName: assignment.name || assignment.gameId,
+      isActive: assignment.isActive,
+      rtpProfile: assignment.rtpProfile,
+    }))
+  );
+}
 
-export default function AssignmentsPage() {
-  const [tenantFilter, setTenantFilter] = useState("");
-  const [gameFilter, setGameFilter] = useState("");
+export default async function AdminAssignmentsPage({ searchParams }) {
+  const params = searchParams || {};
+  const [tenants, games] = await Promise.all([getAdminTenants(), getAdminGames()]);
 
-  const handleAssign = () => {
-    const tenantName = tenantFilter || "Any tenant";
-    const gameName = gameFilter || "Any game";
-    alert(`Demo only: assign ${gameName} to ${tenantName}`);
-  };
+  const allAssignments = buildAssignments(tenants);
+  const tenantFilter = (params.tenantId || "").toLowerCase();
+  const gameFilter = (params.gameId || "").toLowerCase();
+  const filteredAssignments = allAssignments.filter((assignment) => {
+    const tenantMatch = tenantFilter
+      ? assignment.tenantId.toLowerCase().includes(tenantFilter) ||
+        assignment.tenantName.toLowerCase().includes(tenantFilter)
+      : true;
+    const gameMatch = gameFilter
+      ? assignment.gameId.toLowerCase().includes(gameFilter) ||
+        assignment.gameName.toLowerCase().includes(gameFilter)
+      : true;
+    return tenantMatch && gameMatch;
+  });
+
+  const tenantOptions = tenants.map((tenant) => ({
+    label: tenant.name,
+    value: tenant.id,
+  }));
+  const gameOptions = games.map((game) => ({
+    label: game.name,
+    value: game.id,
+  }));
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Operations</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Assign Games</h1>
+        <h1 className="text-3xl font-semibold text-slate-900">Game Assignments</h1>
+        <p className="text-sm text-slate-600">
+          Enable/disable tenant games and override RTP profiles per assignment. Updates call the
+          `/admin/tenants/:tenantId/games/:gameId` API behind the scenes.
+        </p>
       </div>
 
-      <div className="card bg-base-100 shadow-lg rounded-xl border border-slate-100 p-6 space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          <select
-            className="select select-bordered w-full"
-            value={tenantFilter}
-            onChange={(event) => setTenantFilter(event.target.value)}
-          >
-            <option value="">All Tenants</option>
-            {tenants.map((tenant) => (
-              <option key={tenant.id} value={tenant.name}>
-                {tenant.name}
+      <form className="card bg-base-100 shadow rounded-xl border border-slate-100 p-4 grid gap-4 md:grid-cols-3" method="GET">
+        <label className="form-control">
+          <span className="label-text text-xs uppercase tracking-[0.3em] text-slate-500">
+            Tenant
+          </span>
+          <select className="select select-bordered select-sm" name="tenantId" defaultValue={params.tenantId || ""}>
+            <option value="">All tenants</option>
+            {tenantOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
-          <select
-            className="select select-bordered w-full"
-            value={gameFilter}
-            onChange={(event) => setGameFilter(event.target.value)}
-          >
-            <option value="">All Games</option>
-            {games.map((game) => (
-              <option key={game.id} value={game.name}>
-                {game.name}
+        </label>
+        <label className="form-control">
+          <span className="label-text text-xs uppercase tracking-[0.3em] text-slate-500">
+            Game
+          </span>
+          <select className="select select-bordered select-sm" name="gameId" defaultValue={params.gameId || ""}>
+            <option value="">All games</option>
+            {gameOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
-          <button className="btn btn-primary" onClick={handleAssign}>
-            Assign
+        </label>
+        <div className="flex items-end gap-2">
+          <button type="submit" className="btn btn-primary btn-sm w-full">
+            Apply filters
           </button>
+          <a href="/admin/assignments" className="btn btn-ghost btn-sm">
+            Reset
+          </a>
         </div>
-      </div>
+      </form>
 
-      <div className="card bg-base-100 shadow-lg rounded-xl border border-slate-100">
+      <div className="card bg-base-100 shadow rounded-2xl border border-slate-100">
         <div className="card-body">
           <div className="flex items-center justify-between">
-            <h2 className="card-title">Existing Assignments</h2>
-            <p className="text-sm text-slate-500">Toggle status</p>
+            <h2 className="card-title text-sm font-semibold text-slate-700">Assignments</h2>
+            <p className="text-xs text-slate-500">
+              Showing {filteredAssignments.length} of {allAssignments.length}
+            </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="table w-full text-sm">
+            <table className="table table-compact text-xs">
               <thead>
                 <tr>
                   <th>Tenant</th>
                   <th>Game</th>
+                  <th>RTP Profile</th>
                   <th>Status</th>
-                  <th className="text-center">Actions</th>
+                  <th className="text-center">Toggle</th>
+                  <th>Result</th>
                 </tr>
               </thead>
               <tbody>
-                {assignments.map((assignment) => (
-                  <tr key={assignment.id}>
-                    <td>{assignment.tenantName}</td>
-                    <td>{assignment.gameName}</td>
-                    <td>
-                      <span className={statusBadge(assignment.isActive)}>
-                        {assignment.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="flex items-center justify-center">
-                      <button
-                        className={`btn btn-xs ${
-                          assignment.isActive ? "btn-warning" : "btn-success"
-                        }`}
-                        onClick={() =>
-                          alert(
-                            `Demo only: ${
-                              assignment.isActive ? "disable" : "enable"
-                            } ${assignment.gameName} for ${assignment.tenantName}`
-                          )
-                        }
-                      >
-                        {assignment.isActive ? "Disable" : "Enable"}
-                      </button>
+                {filteredAssignments.length ? (
+                  filteredAssignments.map((assignment) => (
+                    <AssignmentRow key={assignment.id} assignment={assignment} />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="text-center py-6 text-slate-500">
+                      No assignments match the selected filters.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

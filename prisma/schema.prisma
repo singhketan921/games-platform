@@ -21,7 +21,14 @@ model Tenant {
   wallets    WalletBalance[]
   walletTxs  WalletTransaction[]
   sessions PlayerSession[]
-
+  users     TenantUser[]
+  credential TenantCredential?
+  walletConfig TenantWalletConfig?
+  walletLogs   WalletCallbackLog[]
+  accessSessions AccessSession[]
+  rtpLogs   RtpChangeLog[] @relation("TenantRtpLogs")
+  roundResults RoundResult[]
+  ipAllowlist TenantIpAllowlist[]
 }
 
 
@@ -31,6 +38,9 @@ model Game {
   description String?
   launchUrl String     // internal URL to launch game built by your game dev
   type      String     // "teenpatti", "rummy", "slot", etc.
+  status    String   @default("active")
+  volatility String   @default("Medium")
+  rtp       Decimal  @default(95.0) @db.Decimal(5, 2)
   createdAt DateTime @default(now())
   tenants   TenantGame[]
   sessions PlayerSession[]
@@ -38,12 +48,16 @@ model Game {
 }
 
 model TenantGame {
-  id        String  @id @default(cuid())
+  id        String    @id @default(cuid())
   tenantId  String
   gameId    String
-  isActive  Boolean @default(true)
-  tenant    Tenant  @relation(fields: [tenantId], references: [id])
-  game      Game    @relation(fields: [gameId], references: [id])
+  isActive  Boolean   @default(true)
+  rtpProfile RtpProfile @default(MEDIUM)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  game      Game      @relation(fields: [gameId], references: [id])
+
+  @@unique([tenantId, gameId], name: "tenantId_gameId")
+  rtpLogs   RtpChangeLog[] @relation("TenantGameRtpLogs")
 }
 
 
@@ -92,4 +106,171 @@ model PlayerSession {
 
   tenant     Tenant   @relation(fields: [tenantId], references: [id])
   game       Game     @relation(fields: [gameId], references: [id])
+}
+
+model TenantCredential {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  clientId         String   @unique
+  clientSecretHash String
+  status           String   @default("active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model AccessSession {
+  id         String   @id @default(cuid())
+  tenantId   String
+  playerId   String
+  status     String   @default("active")
+  metadata   Json?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+enum RtpProfile {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TenantUserRole {
+  OPERATOR
+  ANALYST
+  READ_ONLY
+}
+
+model TenantWalletConfig {
+  id         String   @id @default(cuid())
+  tenantId   String   @unique
+  debitUrl   String
+  creditUrl  String
+  balanceUrl String
+  hmacSecret String
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+enum WalletCallbackType {
+  DEBIT
+  CREDIT
+  BALANCE
+}
+
+model WalletCallbackLog {
+  id             String             @id @default(cuid())
+  tenantId       String
+  type           WalletCallbackType
+  endpoint       String
+  payload        Json
+  responseCode   Int?
+  responseBody   String?
+  status         String
+  idempotencyKey String?
+  attempt        Int      @default(1)
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  ANALYST
+  READ_ONLY
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model GlobalRtpConfig {
+  id        String     @id @default("global")
+  profile   RtpProfile @default(MEDIUM)
+  updatedBy String?
+  updatedAt DateTime   @updatedAt
+}
+
+model RtpChangeLog {
+  id               String      @id @default(cuid())
+  tenantId         String?
+  tenantGameId     String?
+  previousProfile  RtpProfile?
+  newProfile       RtpProfile
+  actor            String?
+  createdAt        DateTime    @default(now())
+
+  tenant    Tenant?     @relation("TenantRtpLogs", fields: [tenantId], references: [id])
+  tenantGame TenantGame? @relation("TenantGameRtpLogs", fields: [tenantGameId], references: [id])
+}
+
+model TenantUser {
+  id           String         @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String
+  role         TenantUserRole @default(OPERATOR)
+  status       String         @default("active")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, email])
+}
+
+enum RoundStatus {
+  PENDING
+  RECONCILED
+  MISMATCH
+  ERROR
+}
+
+model RoundResult {
+  id             String      @id @default(cuid())
+  tenantId       String
+  gameId         String
+  playerId       String
+  sessionId      String?
+  betAmount      Decimal     @db.Decimal(18, 2)
+  payoutAmount   Decimal     @db.Decimal(18, 2)
+  currency       String      @default("INR")
+  rtpProfile     RtpProfile?
+  status         RoundStatus @default(PENDING)
+  walletDebitTxId  String?
+  walletCreditTxId String?
+  discrepancy    Decimal     @db.Decimal(18, 2) @default(0)
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+}
+
+model TenantIpAllowlist {
+  id        String   @id @default(cuid())
+  tenantId  String
+  ipAddress String
+  label     String?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, ipAddress])
+  @@index([tenantId], name: "tenant_ip_allowlist_tenant_idx")
 }
