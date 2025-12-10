@@ -1,4 +1,4 @@
-import { getAdminGgrReport } from "../../../../../src/lib/api";
+import { getAdminGgrReport } from "../../../../src/lib/api";
 
 function formatCurrency(value, currency = "INR") {
   if (value === undefined || value === null) return "-";

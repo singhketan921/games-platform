@@ -96,3 +96,82 @@ default PASS [ 100% ] 15 VUs  2m0s
 
 ## Attachments
 - Pending (local-only run; no Grafana screenshots for this attempt).
+
+---
+
+## Staging-style Simulation (2025-12-10)
+
+### Configuration
+```text
+API_BASE_URL=http://localhost:4100
+TENANT_API_KEY=044aae64a33a86bf29d811c3d7cf8043
+TENANT_SECRET=548ac7141a53ceb18614f8c2c3c6b31e5286826046cc7883eb5235a93a369b67
+TENANT_USER_ID=cmix7jsnm0001u8xwem0jhblg
+VUS=30
+DURATION=180s
+BET_AMOUNT=25
+PAYOUT_MULTIPLIER=0.92
+SLEEP_SECONDS=0.02
+PLAYER_PREFIX=k6-player
+K6_SUMMARY_TREND_STATS=avg,min,med,p(90),p(95),p(99),max
+```
+
+### Metrics
+| Metric | Value |
+| --- | --- |
+| Total requests | 76,086 |
+| Errors (count / %) | 0 / 0% |
+| p50 latency | 77.09 ms |
+| p90 latency | 92.47 ms |
+| p95 latency | 98.22 ms |
+| p99 latency | 112.85 ms |
+| Throughput (req/s) | 422.36 |
+| Wallet debit success % | 100% |
+| Wallet credit success % | 100% |
+
+Raw summary:
+```
+  THRESHOLDS
+
+    http_req_duration
+    PASS 'p(95)<900' p(95)=98.22ms
+
+    http_req_failed
+    PASS 'rate<0.02' rate=0.00%
+
+
+  TOTAL RESULTS
+
+    checks_total.......: 76086   422.36022/s
+    checks_succeeded...: 100.00% 76086 out of 76086
+    checks_failed......: 0.00%   0 out of 76086
+
+    PASS session issued
+    PASS wallet debit ok
+    PASS wallet credit ok
+
+    HTTP
+    http_req_duration..............: avg=64.12ms  min=10.4ms   med=77.09ms  p(90)=92.47ms  p(95)=98.22ms  p(99)=112.85ms max=449.35ms
+      { expected_response:true }...: avg=64.12ms  min=10.4ms   med=77.09ms  p(90)=92.47ms  p(95)=98.22ms  p(99)=112.85ms max=449.35ms
+    http_req_failed................: 0.00% 0 out of 76086
+    http_reqs......................: 76086 422.36022/s
+
+    EXECUTION
+    iteration_duration.............: avg=213.02ms min=145.36ms med=209.38ms p(90)=232.74ms p(95)=244.51ms p(99)=272.85ms max=777.41ms
+    iterations.....................: 25362 140.78674/s
+    vus............................: 30    min=30         max=30
+    vus_max........................: 30    min=30         max=30
+
+    NETWORK
+    data_received..................: 40 MB 221 kB/s
+    data_sent......................: 34 MB 189 kB/s
+
+
+
+running (3m00.1s), 0/30 VUs, 25362 complete and 0 interrupted iterations
+default PASS [ 100% ] 30 VUs  3m0s
+```
+
+### Additional Findings
+- At 30 VUs / 3 minutes (targeting ~420 requests per second) the local stack held p95 under 100 ms with zero failures, showing plenty of headroom before the 2k bet/sec acceptance criteria.
+- Docker Desktop must be running before invoking `scripts/run-loadtest-local.ps1`; otherwise Prisma cannot reach `localhost:5432` and the run will fail before any load is generated (seen in the first attempt on 2025-12-10).

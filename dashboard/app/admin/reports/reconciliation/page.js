@@ -1,4 +1,4 @@
-import { getAdminReconciliationRounds, getAdminRtpDeviationSummary } from "../../../../../src/lib/api";
+import { getAdminReconciliationRounds, getAdminRtpDeviationSummary } from "../../../../src/lib/api";
 
 function formatAmount(value, currency = "INR") {
   if (value === undefined || value === null) return "-";

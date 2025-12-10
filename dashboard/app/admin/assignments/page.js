@@ -4,7 +4,8 @@ import { getAdminGames, getAdminTenants } from "../../../src/lib/api";
 export const dynamic = "force-dynamic";
 
 function buildAssignments(tenants) {
-  return tenants.flatMap((tenant) =>
+  const records = Array.isArray(tenants) ? tenants : tenants?.tenants || [];
+  return records.flatMap((tenant) =>
     (tenant.gameAssignments || []).map((assignment) => ({
       id: `${tenant.id}-${assignment.gameId}`,
       tenantId: tenant.id,
@@ -19,7 +20,9 @@ function buildAssignments(tenants) {
 
 export default async function AdminAssignmentsPage({ searchParams }) {
   const params = searchParams || {};
-  const [tenants, games] = await Promise.all([getAdminTenants(), getAdminGames()]);
+  const [tenantPayload, gamePayload] = await Promise.all([getAdminTenants(), getAdminGames()]);
+  const tenants = tenantPayload?.tenants || [];
+  const games = gamePayload?.games || [];
 
   const allAssignments = buildAssignments(tenants);
   const tenantFilter = (params.tenantId || "").toLowerCase();

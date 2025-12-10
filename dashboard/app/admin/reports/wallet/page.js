@@ -1,5 +1,4 @@
-import { getAdminWalletLogs, getAdminWalletLogMetrics } from "../../../../../src/lib/api";
-
+import { getAdminWalletLogs, getAdminWalletLogMetrics } from "../../../../src/lib/api";
 function formatCurrency(value) {
   if (value === undefined || value === null) return "-";
   return new Intl.NumberFormat("en-IN", {
@@ -156,7 +155,7 @@ export default async function AdminWalletLogsPage({ searchParams }) {
                   <td>{log.attempt}</td>
                   <td>
                     {log.responseCode || "-"}
-                    {log.errorMessage ? ` • ${log.errorMessage}` : ""}
+                    {log.errorMessage ? ` - ${log.errorMessage}` : ""}
                   </td>
                 </tr>
               ))}
@@ -174,3 +173,4 @@ export default async function AdminWalletLogsPage({ searchParams }) {
     </div>
   );
 }
+
