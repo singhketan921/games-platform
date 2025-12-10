@@ -6,6 +6,9 @@ const STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
 ];
 
+const statusBadgeClass = (status) =>
+  status === "processed" ? "badge-success" : "badge-warning";
+
 export default async function TenantCallbacksPage({ searchParams }) {
   const params = (await searchParams) ?? {};
   const statusFilter = params.status || "";
@@ -63,7 +66,7 @@ export default async function TenantCallbacksPage({ searchParams }) {
         </div>
       </form>
 
-      <div className="overflow-x-auto bg-base-100 p-4 rounded-xl shadow">
+      <div className="overflow-x-auto rounded-xl bg-base-100 p-4 shadow">
         <table className="table text-sm">
           <thead>
             <tr>
@@ -78,14 +81,14 @@ export default async function TenantCallbacksPage({ searchParams }) {
             {callbacks.map((cb) => (
               <tr key={cb.id}>
                 <td className="font-mono text-xs">
-                  <a className="link link-primary" href={/tenant/sessions/}>
-                    {cb.id.slice(0, 8)}…
+                  <a className="link link-primary" href={`/tenant/sessions/${cb.id}`}>
+                    {cb.id.slice(0, 8)}
                   </a>
                 </td>
                 <td>{cb.playerId}</td>
                 <td>{cb.gameId}</td>
                 <td>
-                  <span className={adge badge-sm }>
+                  <span className={`badge badge-sm ${statusBadgeClass(cb.status)}`}>
                     {cb.status}
                   </span>
                 </td>
@@ -94,7 +97,7 @@ export default async function TenantCallbacksPage({ searchParams }) {
             ))}
             {!callbacks.length && (
               <tr>
-                <td colSpan={5} className="text-center text-slate-500 py-6">
+                <td colSpan={5} className="py-6 text-center text-slate-500">
                   No callbacks match the current filters.
                 </td>
               </tr>

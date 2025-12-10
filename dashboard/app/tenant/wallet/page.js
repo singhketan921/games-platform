@@ -1,13 +1,25 @@
-import { getTenantSessions, getTenantWalletHistory } from "../../../src/lib/tenantApi";
-import { useTenantProfile } from "../useTenantProfile";
-import dynamic from "next/dynamic";
+import { cookies } from "next/headers";
+import {
+  getTenantProfile,
+  getTenantSessions,
+  getTenantWalletHistory,
+} from "../../../src/lib/tenantApi";
+import WalletActionForm from "../WalletActionForm";
 import WalletCsvButton from "../WalletCsvButton";
-
-const WalletActionForm = dynamic(() => import("../WalletActionForm"), { ssr: false });
 
 export default async function TenantWalletPage({ searchParams }) {
   const resolved = (await searchParams) ?? {};
-  const { profile, profileError, preferredCurrency } = useTenantProfile();
+  const cookieStore = cookies();
+  const cookieCurrency = cookieStore.get("tenant-preferred-currency")?.value || null;
+
+  let profile = null;
+  let profileError = null;
+  try {
+    profile = await getTenantProfile();
+  } catch (error) {
+    profileError = error.message || "Failed to load tenant profile.";
+  }
+
   const userRole = profile?.user?.role || "UNKNOWN";
   const canMutate = userRole === "OPERATOR";
   let sessionsError = null;
@@ -28,7 +40,7 @@ export default async function TenantWalletPage({ searchParams }) {
     : { history: [] };
   const balances = profile?.balances || [];
   const globalError = sessionsError || walletError || profileError;
-  const preferred = preferredCurrency || "INR";
+  const preferred = cookieCurrency || balances[0]?.currency || "INR";
   const formatAmount = (value, currency = preferred) => {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return "-";

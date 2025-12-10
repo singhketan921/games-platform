@@ -1,10 +1,19 @@
-import { getTenantSessions, getTenantPlayerSessions } from "../../../src/lib/tenantApi";
-import { useTenantProfile } from "../useTenantProfile";
+import {
+  getTenantSessions,
+  getTenantPlayerSessions,
+  getTenantProfile,
+} from "../../../src/lib/tenantApi";
 
 export default async function TenantSessionsPage({ searchParams }) {
   const params = (await searchParams) ?? {};
   const playerFilter = params.playerId || "";
-  const { profile, profileError } = useTenantProfile();
+  let profile = null;
+  let profileError = null;
+  try {
+    profile = await getTenantProfile();
+  } catch (error) {
+    profileError = error.message || "Failed to load tenant profile.";
+  }
   let errorMessage = null;
   const payload = await (playerFilter ? getTenantPlayerSessions(playerFilter) : getTenantSessions())
     .catch((error) => {
@@ -70,7 +79,7 @@ export default async function TenantSessionsPage({ searchParams }) {
         </div>
       )}
 
-{playerFilter && (
+      {playerFilter && (
         <div className="alert alert-info text-xs">
           Showing sessions for <span className="font-semibold">{playerFilter}</span>.
         </div>
@@ -93,7 +102,9 @@ export default async function TenantSessionsPage({ searchParams }) {
             {sessions.map((session) => (
               <tr key={session.id}>
                 <td className="font-mono text-xs">
-                  <a className="link link-primary" href={/tenant/sessions/}>{session.id.slice(0, 8)}?</a>
+                  <a className="link link-primary" href={`/tenant/sessions/${session.id}`}>
+                    {session.id.slice(0, 8)}
+                  </a>
                 </td>
                 <td>{session.playerId}</td>
                 <td>{session.gameId}</td>

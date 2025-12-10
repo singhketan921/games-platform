@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAdminGame, updateAdminGame } from "../../../../src/lib/api";
+import { getAdminGame, updateAdminGame } from "../../../../../src/lib/api";
 
 async function saveGame(formData) {
   "use server";

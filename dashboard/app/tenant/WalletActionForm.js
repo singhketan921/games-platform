@@ -28,7 +28,7 @@ export default function WalletActionForm({ kind, canMutate, defaultPlayer }) {
       if (!response.ok) {
         throw new Error(data?.error || "Failed to submit");
       }
-      setStatus({ type: "success", message: ${title} succeeded });
+      setStatus({ type: "success", message: `${title} succeeded` });
       setAmount("");
       setReference("");
     } catch (err) {
@@ -76,7 +76,11 @@ export default function WalletActionForm({ kind, canMutate, defaultPlayer }) {
           {isSubmitting ? "Submitting..." : title}
         </button>
         {status && (
-          <div className={lert text-xs }>
+          <div
+            className={`alert text-xs ${
+              status.type === "error" ? "alert-error" : "alert-success"
+            }`}
+          >
             {status.message}
           </div>
         )}
