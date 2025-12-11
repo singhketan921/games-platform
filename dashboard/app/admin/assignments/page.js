@@ -19,7 +19,7 @@ function buildAssignments(tenants) {
 }
 
 export default async function AdminAssignmentsPage({ searchParams }) {
-  const params = searchParams || {};
+  const params = (await searchParams) ?? {};
   const [tenantPayload, gamePayload] = await Promise.all([getAdminTenants(), getAdminGames()]);
   const tenants = tenantPayload?.tenants || [];
   const games = gamePayload?.games || [];

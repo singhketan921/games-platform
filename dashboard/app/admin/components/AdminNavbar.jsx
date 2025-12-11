@@ -1,10 +1,9 @@
 "use client";
 
-import { SunIcon, MoonIcon, Bars3Icon } from "@heroicons/react/24/outline";
-import useAdminTheme from "./useAdminTheme";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 
 export default function AdminNavbar() {
-  const { theme, toggleTheme } = useAdminTheme();
+  // Theme toggle removed; navbar now renders only the menu trigger and profile chip.
 
   return (
     <header className="sticky top-0 z-20 bg-base-100 shadow-sm">
@@ -24,23 +23,6 @@ export default function AdminNavbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm"
-          >
-            {theme === "light" ? (
-              <>
-                <MoonIcon className="h-4 w-4 text-slate-500" />
-                Dark
-              </>
-            ) : (
-              <>
-                <SunIcon className="h-4 w-4 text-amber-400" />
-                Light
-              </>
-            )}
-          </button>
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-xs font-semibold text-white">
               AD
